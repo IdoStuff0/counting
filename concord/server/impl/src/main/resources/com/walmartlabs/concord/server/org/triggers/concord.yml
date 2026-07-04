@@ -1,0 +1,33 @@
+configuration:
+  runtime: "concord-v2"
+
+flows:
+  onChange:
+  - name: "Repository Refresh"
+    task: repositoryRefresh
+    in:
+      # TODO remove after agent version catch up with server
+      repositoryInfo: "${event.repositoryInfo.stream().filter(r -> r.enabled).toList()}"
+      event: "${event}"
+
+triggers:
+  - concord:
+      version: 2
+      conditions:
+        event: "repository.*"
+      entryPoint: "onChange"
+
+  - github:
+      version: 2
+      entryPoint: "onChange"
+      conditions:
+        type: "push"
+        githubOrg: ".*"
+        githubRepo: ".*"
+        payload:
+          deleted: false # don't start for deleted refs
+        branch: ".*"
+        repositoryInfo:
+          # trigger only for registered enabled repos (i.e. added to Concord)
+          - repository: ".*"
+            enabled: true

@@ -1,0 +1,16 @@
+configuration:
+  dependencies:
+    - mvn://com.walmartlabs.concord.plugins.basic:example-tasks:PROJECT_VERSION
+  entryPoint: main
+  arguments:
+    myName: "Concord"
+
+flows:
+  main:
+  - ${example.hello("myName")}
+
+  - set:
+      myName: "world"
+  - ${example.helloButLouder()}
+
+  - task: example
