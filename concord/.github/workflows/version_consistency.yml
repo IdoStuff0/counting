@@ -1,0 +1,49 @@
+name: version consistency
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version consistency
+        run: |
+          set -euo pipefail
+
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || git tag --sort=-version:refname | head -n1)
+          if [ -z "${latest_tag}" ]; then
+            echo "::error::No Git tags found. Please create a tag matching the Makefile version."
+            exit 1
+          fi
+          latest_tag="${latest_tag#v}"
+
+          version_major=$(awk -F'=' '/^VERSION_MAJOR/{gsub(/[[:space:]]/,"",$2);print $2; exit}' src/Makefile)
+          version_minor=$(awk -F'=' '/^VERSION_MINOR/{gsub(/[[:space:]]/,"",$2);print $2; exit}' src/Makefile)
+          if [ -z "${version_major}" ] || [ -z "${version_minor}" ]; then
+            echo "::error::Unable to parse VERSION_MAJOR or VERSION_MINOR from src/Makefile."
+            exit 1
+          fi
+          makefile_version="${version_major}.${version_minor}"
+
+          if [ "${makefile_version}" != "${latest_tag}" ]; then
+            echo "::error::Makefile version ${makefile_version} does not match latest tag ${latest_tag}."
+            exit 1
+          fi
+
+          if pc_version=$(awk -F': *' '/^Version:/{print $2; exit}' concord.pc); then
+            pc_version=$(echo "${pc_version}" | tr -d '[:space:]')
+            if [ -n "${pc_version}" ] && [ "${pc_version}" != "${makefile_version}" ]; then
+              echo "::error::concord.pc Version field (${pc_version}) does not match Makefile version ${makefile_version}."
+              exit 1
+            fi
+          fi
+
+          echo "Version checks passed: tag=${latest_tag}, makefile=${makefile_version}"

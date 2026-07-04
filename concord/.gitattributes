@@ -1,0 +1,9 @@
+# Handle line endings automatically for files detected as text
+# and leave all files detected as binary untouched.
+* text=auto
+# The above will handle all files NOT found below
+*.sh            eol=lf
+
+# Treat generated codecs as opaque to diff/merge noise
+generated/discord_codecs.c -diff -merge
+generated/discord_codecs.h -diff -merge

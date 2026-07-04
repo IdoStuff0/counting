@@ -1,0 +1,44 @@
+name: github pages
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Auto-trigger workflow everyday at 00:00
+  push:
+    branches: [master]
+  pull_request:
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install Doxygen-1.9.3
+        run: |
+          echo "Install wget"
+          sudo apt install wget
+          echo "Install graphviz"
+          sudo apt install graphviz
+          echo "Fetching binary distribution"
+          wget https://sourceforge.net/projects/doxygen/files/rel-1.9.3/doxygen-1.9.3.linux.bin.tar.gz
+          echo "Extract files from tar file"
+          tar -xvf doxygen-1.9.3.linux.bin.tar.gz
+          sudo mv doxygen-1.9.3/bin/doxygen .
+
+      - name: Doxygen Action
+        run: |
+          echo "Preparing reflect-c files for documentation"
+          make docs
+          echo "Generating HTML output"
+          ./doxygen
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3.7.3
+        if: github.ref == 'refs/heads/master'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./docs/html

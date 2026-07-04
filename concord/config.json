@@ -1,0 +1,13 @@
+{
+  "token": "YOUR-BOT-TOKEN",
+  "log": {
+    "level": "TRACE",
+    "trace": "bot.log",
+    "quiet": false,
+    "overwrite": true,
+    "color": true,
+    "http": "http.log",
+    "ws": "ws.log",
+    "disable": ["WEBSOCKETS", "HTTP"]
+  }
+}

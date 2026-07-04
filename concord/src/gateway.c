@@ -1,0 +1,73 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "discord.h"
+#include "discord-internal.h"
+#include "discord-request.h"
+
+/******************************************************************************
+ * Custom functions
+ ******************************************************************************/
+
+CCORDcode
+discord_disconnect_guild_member(struct discord *client,
+                                u64snowflake guild_id,
+                                u64snowflake user_id,
+                                struct discord_modify_guild_member *params,
+                                struct discord_ret_guild_member *ret)
+{
+    struct discord_attributes attr = { 0 };
+    struct ccord_szbuf body = { 0 };
+    jsonb b;
+    CCORD_EXPECT(client, guild_id != 0, CCORD_BAD_PARAMETER, "");
+    CCORD_EXPECT(client, user_id != 0, CCORD_BAD_PARAMETER, "");
+    DISCORD_ATTR_INIT(attr, discord_guild_member, ret,
+                      params ? params->reason : NULL);
+    jsonb_init(&b);
+    jsonb_object_auto(&b, &body.start, &body.size);
+    {
+        jsonb_key_auto(&b, &body.start, &body.size, "channel_id",
+                       sizeof("channel_id") - 1);
+        jsonb_null_auto(&b, &body.start, &body.size);
+        jsonb_object_pop_auto(&b, &body.start, &body.size);
+    }
+    return discord_rest_run(&client->rest, &attr, &body, HTTP_PATCH,
+                            "/guilds/%" PRIu64 "/members/%" PRIu64, guild_id,
+                            user_id);
+}
+
+/******************************************************************************
+ * REST functions
+ ******************************************************************************/
+
+static void
+_ccord_szbuf_from_json(struct discord *client, struct discord_response *resp)
+{
+    (void)client;
+    struct ccord_szbuf *buf = resp->data;
+    buf->size = cog_strndup(resp->json.start, resp->json.size, &buf->start);
+}
+
+CCORDcode
+discord_get_gateway(struct discord *client, struct ccord_szbuf *ret)
+{
+    struct discord_attributes attr = { 0 };
+    CCORD_EXPECT(client, ret != NULL, CCORD_BAD_PARAMETER, "");
+    attr.dispatch.data = ret;
+    attr.dispatch.sync = DISCORD_SYNC_FLAG;
+    attr.dispatch.done.typeless = &_ccord_szbuf_from_json;
+    return discord_rest_run(&client->rest, &attr, NULL, HTTP_GET, "/gateway");
+}
+
+CCORDcode
+discord_get_gateway_bot(struct discord *client, struct ccord_szbuf *ret)
+{
+    struct discord_attributes attr = { 0 };
+    CCORD_EXPECT(client, ret != NULL, CCORD_BAD_PARAMETER, "");
+    attr.dispatch.data = ret;
+    attr.dispatch.sync = DISCORD_SYNC_FLAG;
+    attr.dispatch.done.typeless = &_ccord_szbuf_from_json;
+    return discord_rest_run(&client->rest, &attr, NULL, HTTP_GET,
+                            "/gateway/bot");
+}
