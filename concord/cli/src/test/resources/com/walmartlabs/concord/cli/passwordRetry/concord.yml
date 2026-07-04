@@ -1,9 +1,0 @@
-flows:
-  default:
-    - form: secureForm
-    - log: "after password form: ${secureForm.age}"
-
-forms:
-  secureForm:
-    - password: { label: "Password", type: "string", inputType: "password", value: "seed-secret" }
-    - age: { label: "Age", type: "int", min: 21 }

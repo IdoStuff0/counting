@@ -1,4 +1,0 @@
-configuration:
-  validation:
-    taskCalls:
-      in: fatal

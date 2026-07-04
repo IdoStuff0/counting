@@ -1,5 +1,0 @@
-flows:
-  default:
-    - task: reentrantTask
-      in:
-        action: "boo"

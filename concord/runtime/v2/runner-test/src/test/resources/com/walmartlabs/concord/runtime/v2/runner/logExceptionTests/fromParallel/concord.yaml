@@ -1,5 +1,0 @@
-flows:
-  default:
-    - parallel:
-        - task: "faultyTask3"
-        - log: "OK"

@@ -1,8 +1,0 @@
-flows:
-  default:
-    - expr: "${simpleMethodTask.getValue()}"
-      out: myValue
-      meta:
-        dryRunReady: ${true}
-
-    - log: "myValue: ${myValue}"

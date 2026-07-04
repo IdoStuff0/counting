@@ -1,4 +1,0 @@
-flows:
-  default:
-    - suspend: ev1
-    - log: "after resume secret: ${crypto.exportAsString('Default', 'resumeSecret', null)}"

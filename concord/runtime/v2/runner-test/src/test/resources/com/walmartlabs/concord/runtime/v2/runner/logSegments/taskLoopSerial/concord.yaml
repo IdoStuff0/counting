@@ -1,8 +1,0 @@
-flows:
-  default:
-    - task: "log"
-      in:
-        msg: "test ${item}"
-      loop:
-        items: [1, 2, 3]
-        mode: serial

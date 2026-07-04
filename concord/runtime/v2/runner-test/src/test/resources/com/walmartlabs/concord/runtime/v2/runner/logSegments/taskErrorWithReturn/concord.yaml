@@ -1,7 +1,0 @@
-flows:
-  default:
-    - task: "faultyTask"
-      error:
-        - log: "in error block"
-        - return
-        - log: "unreachable"
