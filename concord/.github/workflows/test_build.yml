@@ -1,0 +1,130 @@
+name: test build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          echo "Installing libcurl from source with WebSocket support"
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf libtool pkg-config libssl-dev zlib1g-dev
+          curl -LO https://curl.se/download/curl-8.7.1.tar.gz
+          tar -xzf curl-8.7.1.tar.gz
+          cd curl-8.7.1 && ./configure --with-openssl --enable-websockets
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+
+      - name: Run Makefile
+        run: |
+          echo "Building"
+          make all
+          echo "Building examples"
+          make examples
+          echo "Building tests"
+          make test
+          echo "Running hermetic test suites"
+          make check
+
+      - name: Build shared library
+        run: |
+          echo "Building shared library"
+          make clean
+          make shared
+
+      - name: Build shared library without SONAME
+        run: |
+          echo "Building shared library without SONAME"
+          make clean
+          make shared_nosoname
+
+      - name: Run Makefile with parallelism
+        run: |
+          echo "Building with parallelism"
+          make clean && make all -j$(nproc)
+          echo "Building examples with parallelism"
+          make clean && make examples -j$(nproc)
+          echo "Building tests with parallelism"
+          make clean && make test -j$(nproc)
+          echo "Building shared library with parallelism"
+          make clean && make shared -j$(nproc)
+
+  test-sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          echo "Installing libcurl from source with WebSocket support"
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf libtool pkg-config libssl-dev zlib1g-dev
+          curl -LO https://curl.se/download/curl-8.7.1.tar.gz
+          tar -xzf curl-8.7.1.tar.gz
+          cd curl-8.7.1 && ./configure --with-openssl --enable-websockets
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+
+      - name: Run hermetic suites under ASan/UBSan
+        env:
+          UBSAN_OPTIONS: print_stacktrace=1
+        run: make check-san -j$(nproc)
+
+      - name: Lower ASLR entropy for TSan
+        run: |
+          # gcc's TSan runtime aborts with "unexpected memory mapping" when
+          # the kernel's mmap entropy exceeds what it supports
+          sudo sysctl vm.mmap_rnd_bits=28
+
+      - name: Run hermetic suites under TSan
+        run: make check-san SANFLAGS="-fsanitize=thread" -j$(nproc)
+
+  test-build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          echo "Installing dependencies via Homebrew"
+          brew update
+          brew install autoconf automake libtool pkg-config openssl@3
+          echo "Building libcurl from source with WebSocket support"
+          curl -LO https://curl.se/download/curl-8.7.1.tar.gz
+          tar -xzf curl-8.7.1.tar.gz
+          cd curl-8.7.1
+          OPENSSL_PREFIX=$(brew --prefix openssl@3)
+          ./configure --with-openssl="$OPENSSL_PREFIX" --enable-websockets
+          make -j$(sysctl -n hw.ncpu)
+          sudo make install
+          sudo update_dyld_shared_cache || true
+
+      - name: Build targets
+        env:
+          PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
+        run: |
+          echo "Building (macOS)"
+          make all
+          echo "Building examples (macOS)"
+          make examples
+          echo "Building tests (macOS)"
+          make test
+          echo "Running hermetic test suites (macOS)"
+          make check
+
+      - name: Build shared library for macOS
+        env:
+          PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
+        run: |
+          echo "Building shared library for macOS"
+          make clean
+          make shared_osx

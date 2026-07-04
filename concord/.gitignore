@@ -1,0 +1,37 @@
+# Ignore all
+*
+# But these
+!AUTHORS
+!.vscode
+!core/
+!core/*.c
+!core/*.h
+!docs
+!docs/*
+!doxygen-awesome-css
+!examples
+!include
+!include/*.h
+!lib
+!lib/.gitkeep
+!licenses
+!src
+!src/*.c
+!test
+!.clang-format
+!.git*
+!Doxyfile
+!*.md
+!LICENSE
+!Makefile
+!config.json
+!.github/**
+!concord.pc
+!reflect-c
+!src/api
+!src/api/*.recipe.h
+!scripts
+!scripts/check_openapi_sync.py
+!scripts/openapi_sync_allowlist.txt
+# Local-only planning material (will become a submodule)
+docs/roadmap/

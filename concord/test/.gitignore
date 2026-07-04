@@ -1,0 +1,18 @@
+# Ignore all
+*
+# But these
+!greatest.h
+!test-utils.h
+!test_config.json
+!.gitignore
+!*.c
+!Makefile
+!README.md
+!fixtures
+!fixtures/*.json
+!fixtures/README.md
+!fixture-server.h
+!test-client.h
+!mock-websockets.h
+!gateway-harness.h
+!codec-harness.h
