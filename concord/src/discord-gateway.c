@@ -809,7 +809,7 @@ _discord_check_curl_compatibility(void)
     _Bool wss_enabled = 0;
 
     if (curl_info->version_num < 0x080701) {
-        logmod_log(FATAL, NULL,
+        logmod_log(WARN, NULL,
                    "libcurl version 8.7.1 or higher required (found %s)",
                    curl_info->version);
         return CCORD_CURL_OUTDATED_VERSION;
@@ -819,10 +819,10 @@ _discord_check_curl_compatibility(void)
         if (0 == strncmp(*proto, "wss", 3)) wss_enabled = 1;
     }
     if (!wss_enabled) {
-        logmod_log(FATAL, NULL,
+        logmod_log(WARN, NULL,
                    "libcurl must be compiled with websockets support");
         logmod_log(
-            FATAL, NULL,
+            WARN, NULL,
             "Please recompile libcurl with the --enable-websockets flag");
         return CCORD_CURL_WEBSOCKETS_MISSING;
     }
@@ -836,7 +836,7 @@ discord_gateway_start(struct discord_gateway *gw)
     CCORDcode code;
 
     if ((code = _discord_check_curl_compatibility()) != CCORD_OK) {
-        logmod_log(FATAL, gw->logger,
+        logmod_log(WARN, gw->logger,
                    "libcurl compatibility check failed: %s (code %d)",
                    ccord_strerror(code), code);
         return code;
