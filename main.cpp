@@ -14,7 +14,7 @@ void onReady(struct discord* client, const struct discord_ready* event) {
 
 void onGuildCreate(struct discord* client, const struct discord_guild* guild) {
         struct discord_create_message params = {
-                .content = (char*)"Counting bot initialized. Starting number is 1."
+                .content = (char*)"Counting bot initialized. Type `s!channel` to lock me to a channel!"
         };
 
         discord_create_message(
@@ -29,9 +29,33 @@ Calculator calc;
 MathStructure result;
 uint64_t counter = 0;
 uint64_t lastUser{0};
+uint64_t active_channel_id = 0; // The global channel ID lock
 
 void onMessage(struct discord* client, const struct discord_message* event) {
         if (event->author->bot) return;
+
+        std::string content = event->content;
+
+        // 1. Listen for the setup command
+        if (content == "s!channel") {
+                active_channel_id = event->channel_id;
+                
+                struct discord_create_message params = {
+                        .content = (char*)"✅ Channel locked! I will only count in this channel now. The next number is 1."
+                };
+                discord_create_message(client, event->channel_id, &params, nullptr);
+                
+                // Reset the game state just in case it was moved mid-game
+                counter = 0;
+                lastUser = 0;
+                return;
+        }
+
+        // 2. Enforce the channel lock (ignore messages from other channels, or if it hasn't been set yet)
+        if (event->channel_id != active_channel_id || active_channel_id == 0) {
+                return;
+        }
+
         std::cout<< event->author->username << ": " << event->content << "\n";
 
         auto message = [&](const std::string& text) {
@@ -54,20 +78,16 @@ void onMessage(struct discord* client, const struct discord_message* event) {
                 return;
         }
 
-        if (event->author->id == lastUser) {
-            //    message("You can't count twice in a row.");
-              //  return;
-        }
-
         if (result.isUndefined() || result.isAborted()) {
                 message("Failed to calculate answer.");
                 return;
         }
 
         if(!result.representsInteger()){
-		//test
-                message("Not an integer");
-
+                // Print exactly what the engine evaluated for non-integers
+                std::string debugStr = result.print();
+                message("Not an integer. The engine evaluated this to: " + debugStr);
+                return;
         }
 
         if (result.representsInteger() && !result.number().isNegative()) {
@@ -82,6 +102,17 @@ void onMessage(struct discord* client, const struct discord_message* event) {
                         return;
                 }
 
+                // Rule Enforcement: The Double-Count Punisher
+                if (event->author->id == lastUser) {
+                        std::stringstream ss;
+                        ss << "❌ You can't count twice in a row! You ruined the streak at " << counter << ". The next number is 1.\n";
+                        counter = 0;
+                        lastUser = 0;
+                        message(ss.str());
+                        return;
+                }
+
+                // Sequence Enforcement: The Out-of-Order Punisher
                 if (answer != counter + 1) {
                         std::stringstream ss;
                         ss<< "Failed at " << (counter + 1) << " !! The next number is 1.\n";
@@ -91,11 +122,12 @@ void onMessage(struct discord* client, const struct discord_message* event) {
                         return;
                 }
 
-
                 lastUser = event->author->id;
-                discord_create_reaction(client, event->channel_id, event->id, 0, "✅", nullptr);
+                // React with the ballot box with check emoji string
+                discord_create_reaction(client, event->channel_id, event->id, 0, "☑️", nullptr);
                 counter++;
                 return;
+                
         }
 
         message("Missed all conditions");
@@ -116,12 +148,7 @@ void initLog() {
 }
 
 int main() {
-        const char* botToken = getenv("COUNTING_BOT_TOKEN");
-
-        if (!botToken) {
-                printf("Enter token in .env\n");
-                return -1;
-        }
+        const char* botToken = "";
 
         std::thread(initLog).detach();
 
