@@ -83,14 +83,27 @@ void onMessage(struct discord* client, const struct discord_message* event) {
                 return;
         }
 
-        if(!result.representsInteger()){
-                // Print exactly what the engine evaluated for non-integers
+        // At this point it has an answer
+
+        if(!result.isReal(){
+                // Print exactly what the engine evaluated for non-real numbers
                 std::string debugStr = result.print();
-                message("Not an integer. The engine evaluated this to: " + debugStr);
+                message("Not real. The engine evaluated this to: " + debugStr);
                 return;
         }
 
-        if (result.representsInteger() && !result.number().isNegative()) {
+        // At this point the answer is real
+
+        if (!result.representsInteger() {
+            // Round the answer and check if its an int
+            std::string debugStr = result.print();
+            
+            if(!(result.round(5, 0).representsInteger()))
+                message("Not an Integer. The engine evaluated this to: " + result.round(5, 0) + " in 5 decimal places");
+                return;
+        }
+
+        if (!result.number().isNegative()) {
                 uint64_t answer;
 
                 try {
