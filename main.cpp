@@ -118,6 +118,7 @@ void onMessage(struct discord* client, const struct discord_message* event) {
                 // Rule Enforcement: The Double-Count Punisher
                 if (event->author->id == lastUser) {
                         std::stringstream ss;
+                        discord_create_reaction(client, event->channel_id, event->id, 0, "❌", nullptr);
                         ss << "❌ You can't count twice in a row! You ruined the streak at " << counter << ". The next number is 1.\n";
                         counter = 0;
                         lastUser = 0;
@@ -128,6 +129,7 @@ void onMessage(struct discord* client, const struct discord_message* event) {
                 // Sequence Enforcement: The Out-of-Order Punisher
                 if (answer != counter + 1) {
                         std::stringstream ss;
+                        discord_create_reaction(client, event->channel_id, event->id, 0, "❌", nullptr);
                         ss<< "Failed at " << (counter + 1) << " !! The next number is 1.\n";
                         counter = 0;
                         lastUser = 0;
