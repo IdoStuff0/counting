@@ -94,13 +94,13 @@ void onMessage(struct discord* client, const struct discord_message* event) {
 
         // At this point the answer is real
 
+        result.round(5, 0) // round answer to be nice to people
+
         if (!result.representsInteger() {
             // Round the answer and check if its an int
             std::string debugStr = result.print();
-            
-            if(!(result.round(5, 0).representsInteger()))
-                message("Not an Integer. The engine evaluated this to: " + result.round(5, 0) + " in 5 decimal places");
-                return;
+            message("Not an Integer. The engine evaluated this to: " + debugStr);
+            return;
         }
 
         if (!result.number().isNegative()) {
